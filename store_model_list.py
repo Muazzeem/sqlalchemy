@@ -5,13 +5,8 @@ engine, metadata = connect_database(ulr='postgresql+psycopg2://postgres:user123@
 
 
 def sort_by_table_name():
-    table_list = []
-    for table in metadata.tables.values():
-        data = count_data(table)
-        table_list.append(data['table'])
-
-    table_list.sort()
-    for table in table_list:
+    table_list = [count_data(table)['table'] for table in metadata.tables.values()]
+    for table in sorted(table_list):
         print(table)
 
 
