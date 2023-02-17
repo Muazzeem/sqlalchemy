@@ -1,20 +1,27 @@
-from sqlalchemy import Table
-from base import connect_database
+from sqlalchemy import Table, MetaData, create_engine, URL, text
 
-engine, metadata = connect_database(ulr='postgresql+psycopg2://postgres:user123@localhost/demo')
+db_url = URL.create(
+    "postgresql+psycopg2",
+    username="postgres",
+    password="user123",
+    host="localhost",
+    database="demo",
+)
+
+engine = create_engine(db_url)
+metadata = MetaData()
+metadata.reflect(engine)
 
 
 def count_data(table):
     table = Table(table.name, metadata, autoload=True, autoload_with=engine)
-    select_query = table.select()
-
     with engine.connect() as conn:
-        row_count = conn.execute(select_query).rowcount
-        return {'table': table.name, 'item': row_count}
+        query = f"select count(id) from {table.name}"
+        count = conn.execute(text(query)).scalar()
+        return {'table': table.name, 'item': count}
 
 
-data_list = [count_data(table) for table in metadata.tables.values()]
-sorted_data = sorted(data_list, key=lambda x: x['table'])
-for data in sorted_data:
+data_list = [count_data(table) for table in metadata.tables.values() if 'id' in table.columns]
+table_list = sorted(data_list, key=lambda x: x['table'])
+for data in table_list:
     print(f"{data['table']}: {data['item']}")
-
